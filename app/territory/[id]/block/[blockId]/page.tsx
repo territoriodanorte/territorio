@@ -185,7 +185,7 @@ export default function BlockPage() {
           {/* TOP HOUSES */}
           <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
             {houses.filter(h => h.side === 'top').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
             {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
           </div>
@@ -195,7 +195,7 @@ export default function BlockPage() {
             {/* LEFT ROW */}
             <div className="flex flex-col gap-2 items-start justify-center relative -ml-1 flex-1">
               {houses.filter(h => h.side === 'left').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
               {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
             </div>
@@ -203,7 +203,7 @@ export default function BlockPage() {
             {/* RIGHT ROW */}
             <div className="flex flex-col gap-2 items-end justify-center relative -mr-1 flex-1">
               {houses.filter(h => h.side === 'right').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
               {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
             </div>
@@ -212,7 +212,7 @@ export default function BlockPage() {
           {/* BOTTOM HOUSES */}
           <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
             {houses.filter(h => h.side === 'bottom').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
             {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
           </div>
@@ -303,7 +303,7 @@ function AddHouseBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseClick }: any) {
+function HouseBox({ h, isEditMode, deleteHouse, addBefore, handleHouseClick }: any) {
   const houseColor = h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]";
   return (
     <div className="flex flex-col items-center shrink-0 gap-1">
@@ -328,11 +328,6 @@ function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseC
           </button>
         )}
       </div>
-      {isEditMode && (
-        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm">
-          <Plus className="w-3 h-3" />
-        </button>
-      )}
     </div>
   );
 }
