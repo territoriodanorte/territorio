@@ -6,7 +6,7 @@ import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc, where
 import { db } from "@/lib/firebase";
 import { Territory, Block, House, Side } from "@/lib/types";
 import { useEditMode } from "@/components/edit-mode-provider";
-import { ArrowLeft, Edit2, Check, X, Plus, Trash2, ArrowLeft as ArrowL, ArrowRight as ArrowR } from "lucide-react";
+import { ArrowLeft, Edit2, Check, X, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -303,37 +303,33 @@ function AddHouseBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-function HouseBox({ h, isEditMode, moveHouse, deleteHouse, addBefore, addNext, handleHouseClick, setEditingHouse }: any) {
+function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseClick }: any) {
   const houseColor = h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]";
   return (
-    <div className="flex flex-col items-center relative group shrink-0">
+    <div className="flex flex-col items-center shrink-0 gap-1">
       {isEditMode && (
-        <button onClick={(e) => { e.stopPropagation(); addBefore(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 z-40 mb-1 shadow-sm">
+        <button onClick={(e) => { e.stopPropagation(); addBefore(); }} className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm">
           <Plus className="w-3 h-3" />
         </button>
       )}
-      <div className="flex gap-2 items-center relative">
+      <div className="flex items-center gap-1">
         <button
-          onClick={() => isEditMode ? setEditingHouse(h) : handleHouseClick(h)}
+          onClick={() => handleHouseClick(h)}
           className={cn(
-            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 z-10 relative overflow-hidden",
+            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95",
             houseColor
           )}
         >
           <span className="truncate w-full text-center leading-none">{h.number}</span>
         </button>
-        
         {isEditMode && (
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-slate-200 shadow-lg p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-auto">
-             <button onClick={(e) => { e.stopPropagation(); moveHouse(h, 'left'); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><ArrowL className="w-3.5 h-3.5"/></button>
-             <button onClick={(e) => { e.stopPropagation(); setEditingHouse(h); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><Edit2 className="w-3.5 h-3.5"/></button>
-             <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5"/></button>
-             <button onClick={(e) => { e.stopPropagation(); moveHouse(h, 'right'); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><ArrowR className="w-3.5 h-3.5"/></button>
-          </div>
+          <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="w-6 h-6 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 shadow-sm">
+            <Trash2 className="w-3 h-3" />
+          </button>
         )}
       </div>
       {isEditMode && (
-        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 z-40 mt-1 shadow-sm">
+        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm">
           <Plus className="w-3 h-3" />
         </button>
       )}
