@@ -44,9 +44,7 @@ export function EditModeProvider({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl border border-slate-200">
             <h2 className="text-2xl font-black mb-2 text-slate-900 uppercase tracking-tighter">Modo de Edição</h2>
-            <p className="text-slate-500 mb-6 text-sm font-bold uppercase tracking-widest">
-              Senha (8318)
-            </p>
+
             <form onSubmit={handleSubmit}>
               <input
                 type="password"
