@@ -1,0 +1,6 @@
+{
+  "name": "Territórios da Norte - Navegantes",
+  "description": "Controle de visitas porta a porta por território e quadra.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
