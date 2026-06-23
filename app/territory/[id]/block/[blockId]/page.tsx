@@ -154,7 +154,7 @@ export default function BlockPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto w-full bg-white flex flex-col items-center justify-center p-4">
-        <div className="relative border border-slate-200 rounded-[2rem] w-[300px] min-h-[460px] bg-white flex flex-col py-6 px-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto my-24 z-0">
+        <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto my-24 z-0">
           
           {/* Inner dashed frame */}
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
@@ -183,7 +183,7 @@ export default function BlockPage() {
           </div>
 
           {/* TOP HOUSES */}
-          <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
+          <div className="flex justify-center gap-1 w-full flex-wrap pb-2 border-b border-dashed border-slate-200">
             {houses.filter(h => h.side === 'top').map(h => (
               <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
@@ -191,9 +191,9 @@ export default function BlockPage() {
           </div>
 
           {/* MIDDLE HOUSES */}
-          <div className="flex flex-1 justify-between w-full py-4 items-stretch gap-4">
+          <div className="flex justify-between w-full py-2 items-stretch gap-2">
             {/* LEFT ROW */}
-            <div className="flex flex-col gap-2 items-start justify-center relative -ml-1 flex-1">
+            <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
               {houses.filter(h => h.side === 'left').map(h => (
                 <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
@@ -201,7 +201,7 @@ export default function BlockPage() {
             </div>
             
             {/* RIGHT ROW */}
-            <div className="flex flex-col gap-2 items-end justify-center relative -mr-1 flex-1">
+            <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
               {houses.filter(h => h.side === 'right').map(h => (
                 <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
@@ -210,7 +210,7 @@ export default function BlockPage() {
           </div>
 
           {/* BOTTOM HOUSES */}
-          <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
+          <div className="flex justify-center gap-1 w-full flex-wrap pt-2 border-t border-dashed border-slate-200">
             {houses.filter(h => h.side === 'bottom').map(h => (
               <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
