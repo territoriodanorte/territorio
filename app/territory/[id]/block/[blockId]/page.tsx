@@ -64,7 +64,7 @@ export default function BlockPage() {
     setDialogOpen(true);
   };
 
-  const updateHouseStatus = async (status: 'visited' | 'not_visited') => {
+  const updateHouseStatus = async (status: 'visited' | 'not_visited' | 'not_answered' | 'not_answered') => {
     if (!selectedHouse) return;
     await updateDoc(doc(db, "houses", selectedHouse.id), { status });
     setDialogOpen(false); setSelectedHouse(null);
@@ -185,7 +185,7 @@ export default function BlockPage() {
           {/* TOP HOUSES */}
           <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
             {houses.filter(h => h.side === 'top').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
             {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
           </div>
@@ -195,7 +195,7 @@ export default function BlockPage() {
             {/* LEFT ROW */}
             <div className="flex flex-col gap-2 items-start justify-center relative -ml-1 flex-1">
               {houses.filter(h => h.side === 'left').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
               {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
             </div>
@@ -203,7 +203,7 @@ export default function BlockPage() {
             {/* RIGHT ROW */}
             <div className="flex flex-col gap-2 items-end justify-center relative -mr-1 flex-1">
               {houses.filter(h => h.side === 'right').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
               {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
             </div>
@@ -212,7 +212,7 @@ export default function BlockPage() {
           {/* BOTTOM HOUSES */}
           <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
             {houses.filter(h => h.side === 'bottom').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
             {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
           </div>
@@ -273,7 +273,7 @@ export default function BlockPage() {
                 <p className="text-sm text-slate-800 mb-4 text-center font-black uppercase tracking-widest">Alguém atendeu?</p>
                 <div className="grid grid-cols-2 gap-4 w-full mb-4">
                   <button onClick={() => updateHouseStatus('visited')} className="py-6 bg-green-500 text-white rounded-2xl font-black text-2xl shadow-lg border-b-4 border-green-700 hover:bg-green-600 active:translate-y-1 active:border-b-0 transition-all">SIM</button>
-                  <button onClick={() => setDialogOpen(false)} className="py-6 bg-red-500 text-white rounded-2xl font-black text-2xl shadow-lg border-b-4 border-red-700 hover:bg-red-600 active:translate-y-1 active:border-b-0 transition-all">NÃO</button>
+                  <button onClick={() => updateHouseStatus('not_answered')} className="py-6 bg-red-500 text-white rounded-2xl font-black text-2xl shadow-lg border-b-4 border-red-700 hover:bg-red-600 active:translate-y-1 active:border-b-0 transition-all">NÃO</button>
                 </div>
               </>
             ) : (
@@ -303,30 +303,37 @@ function AddHouseBtn({ onClick }: { onClick: () => void }) {
   );
 }
 
-function HouseBox({ h, isEditMode, moveHouse, deleteHouse, addNext, handleHouseClick, setEditingHouse }: any) {
+function HouseBox({ h, isEditMode, moveHouse, deleteHouse, addBefore, addNext, handleHouseClick, setEditingHouse }: any) {
+  const houseColor = h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]";
   return (
-    <div className="flex gap-2 items-center relative group shrink-0">
-      <button
-        onClick={() => isEditMode ? setEditingHouse(h) : handleHouseClick(h)}
-        className={cn(
-          "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 z-10 relative overflow-hidden",
-          h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]"
-        )}
-      >
-        <span className="truncate w-full text-center leading-none">{h.number}</span>
-      </button>
-      
+    <div className="flex flex-col items-center relative group shrink-0">
       {isEditMode && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-slate-200 shadow-lg p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-auto">
-           <button onClick={(e) => { e.stopPropagation(); moveHouse(h, 'left'); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><ArrowL className="w-3.5 h-3.5"/></button>
-           <button onClick={(e) => { e.stopPropagation(); setEditingHouse(h); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><Edit2 className="w-3.5 h-3.5"/></button>
-           <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5"/></button>
-           <button onClick={(e) => { e.stopPropagation(); moveHouse(h, 'right'); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><ArrowR className="w-3.5 h-3.5"/></button>
-        </div>
+        <button onClick={(e) => { e.stopPropagation(); addBefore(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 z-40 mb-1 shadow-sm">
+          <Plus className="w-3 h-3" />
+        </button>
       )}
-
+      <div className="flex gap-2 items-center relative">
+        <button
+          onClick={() => isEditMode ? setEditingHouse(h) : handleHouseClick(h)}
+          className={cn(
+            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 z-10 relative overflow-hidden",
+            houseColor
+          )}
+        >
+          <span className="truncate w-full text-center leading-none">{h.number}</span>
+        </button>
+        
+        {isEditMode && (
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-slate-200 shadow-lg p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-auto">
+             <button onClick={(e) => { e.stopPropagation(); moveHouse(h, 'left'); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><ArrowL className="w-3.5 h-3.5"/></button>
+             <button onClick={(e) => { e.stopPropagation(); setEditingHouse(h); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><Edit2 className="w-3.5 h-3.5"/></button>
+             <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5"/></button>
+             <button onClick={(e) => { e.stopPropagation(); moveHouse(h, 'right'); }} className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-blue-600"><ArrowR className="w-3.5 h-3.5"/></button>
+          </div>
+        )}
+      </div>
       {isEditMode && (
-        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 absolute -right-3 top-1/2 -translate-y-1/2 z-40 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 z-40 mt-1 shadow-sm">
           <Plus className="w-3 h-3" />
         </button>
       )}
