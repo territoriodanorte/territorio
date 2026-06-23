@@ -27,7 +27,7 @@ export interface House {
   side: Side;
   streetName: string;
   number: string;
-  status: 'not_visited' | 'visited';
+  status: 'not_visited' | 'visited' | 'not_answered';
   order: number;
   createdAt: number;
 }
