@@ -64,7 +64,7 @@ export default function BlockPage() {
     setDialogOpen(true);
   };
 
-  const updateHouseStatus = async (status: 'visited' | 'not_visited' | 'not_answered' | 'not_answered') => {
+  const updateHouseStatus = async (status: 'visited' | 'not_visited' | 'not_answered') => {
     if (!selectedHouse) return;
     await updateDoc(doc(db, "houses", selectedHouse.id), { status });
     setDialogOpen(false); setSelectedHouse(null);
@@ -154,7 +154,7 @@ export default function BlockPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto w-full bg-white flex flex-col items-center justify-center p-4">
-        <div className="relative border border-slate-200 rounded-[2rem] w-[300px] bg-white flex flex-col py-6 px-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto my-24 z-0">
+        <div className="relative border border-slate-200 rounded-[2rem] w-[300px] min-h-[460px] bg-white flex flex-col py-6 px-4 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto my-24 z-0">
           
           {/* Inner dashed frame */}
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
@@ -185,25 +185,25 @@ export default function BlockPage() {
           {/* TOP HOUSES */}
           <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
             {houses.filter(h => h.side === 'top').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
             {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
           </div>
 
           {/* MIDDLE HOUSES */}
-          <div className="flex justify-between w-full py-2 items-start gap-4">
+          <div className="flex flex-1 justify-between w-full py-4 items-stretch gap-4">
             {/* LEFT ROW */}
-            <div className="flex flex-col gap-2 items-start relative -ml-1 flex-1">
+            <div className="flex flex-col gap-2 items-start justify-center relative -ml-1 flex-1">
               {houses.filter(h => h.side === 'left').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
               {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
             </div>
             
             {/* RIGHT ROW */}
-            <div className="flex flex-col gap-2 items-end relative -mr-1 flex-1">
+            <div className="flex flex-col gap-2 items-end justify-center relative -mr-1 flex-1">
               {houses.filter(h => h.side === 'right').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
               ))}
               {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
             </div>
@@ -212,7 +212,7 @@ export default function BlockPage() {
           {/* BOTTOM HOUSES */}
           <div className="flex justify-center gap-2 w-full flex-wrap max-w-full">
             {houses.filter(h => h.side === 'bottom').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
+              <HouseBox key={h.id} h={h} isEditMode={isEditMode} moveHouse={moveHouse} deleteHouse={deleteHouse} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} setEditingHouse={(h: House) => { setEditingHouse(h); setEditingHouseNumber(h.number); }} />
             ))}
             {isEditMode && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
           </div>
@@ -297,37 +297,36 @@ export default function BlockPage() {
 
 function AddHouseBtn({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm">
-      <Plus className="w-3 h-3" />
+    <button onClick={onClick} className="min-w-[3.5rem] px-2 h-10 flex items-center justify-center rounded-[12px] border-2 border-dashed border-slate-300 text-slate-400 hover:text-blue-500 hover:border-blue-400 hover:bg-blue-50 shrink-0">
+      <Plus className="w-5 h-5" />
     </button>
   );
 }
 
-function HouseBox({ h, isEditMode, deleteHouse, addBefore, handleHouseClick }: any) {
-  const houseColor = h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]";
+function HouseBox({ h, isEditMode, deleteHouse, addNext, handleHouseClick }: any) {
   return (
-    <div className="flex flex-col items-center shrink-0 gap-1">
+    <div className="flex gap-2 items-center relative group shrink-0">
+      <button
+        onClick={() => handleHouseClick(h)}
+        className={cn(
+          "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 z-10 relative overflow-hidden",
+          h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]"
+        )}
+      >
+        <span className="truncate w-full text-center leading-none">{h.number}</span>
+      </button>
+      
       {isEditMode && (
-        <button onClick={(e) => { e.stopPropagation(); addBefore(); }} className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-slate-200 shadow-lg p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-auto">
+           <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5"/></button>
+        </div>
+      )}
+
+      {isEditMode && (
+        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 absolute -right-3 top-1/2 -translate-y-1/2 z-40 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
           <Plus className="w-3 h-3" />
         </button>
       )}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => handleHouseClick(h)}
-          className={cn(
-            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95",
-            houseColor
-          )}
-        >
-          <span className="truncate w-full text-center leading-none">{h.number}</span>
-        </button>
-        {isEditMode && (
-          <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="w-6 h-6 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 shadow-sm">
-            <Trash2 className="w-3 h-3" />
-          </button>
-        )}
-      </div>
     </div>
   );
 }
