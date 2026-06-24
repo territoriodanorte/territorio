@@ -311,11 +311,11 @@ function AddHouseBtn({ onClick }: { onClick: () => void }) {
 
 function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseClick, isRow }: any) {
   return (
-    <div className={cn("flex items-center relative group shrink-0", isRow ? "flex-row gap-3" : "flex-col gap-3")}>
+    <div className={cn("flex items-center relative shrink-0", isRow ? "flex-row gap-3" : "flex-col gap-3")}>
       {isEditMode && (
         <button
           onClick={(e) => { e.stopPropagation(); addBefore(); }}
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0 z-30"
+          className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0"
         >
           <Plus className="w-3 h-3" />
         </button>
@@ -325,7 +325,7 @@ function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseC
         <button
           onClick={() => handleHouseClick(h)}
           className={cn(
-            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 z-10 relative overflow-hidden",
+            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 relative overflow-hidden",
             h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]"
           )}
         >
@@ -333,16 +333,19 @@ function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseC
         </button>
 
         {isEditMode && (
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-slate-200 shadow-lg p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-auto">
-             <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5"/></button>
-          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }}
+            className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow text-slate-400 hover:text-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="w-3 h-3"/>
+          </button>
         )}
       </div>
 
       {isEditMode && (
         <button
           onClick={(e) => { e.stopPropagation(); addNext(); }}
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0 z-30"
+          className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0"
         >
           <Plus className="w-3 h-3" />
         </button>
