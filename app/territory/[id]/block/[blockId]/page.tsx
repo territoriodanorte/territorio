@@ -30,6 +30,7 @@ export default function BlockPage() {
   
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [editingHouseNumber, setEditingHouseNumber] = useState("");
+  const [isSavingHouse, setIsSavingHouse] = useState(false);
 
   useEffect(() => {
     if (!territoryId || !blockId) return;
@@ -85,18 +86,23 @@ export default function BlockPage() {
 
   const addHouse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addingToSide || !newHouseNumber.trim()) return;
-    const sideHouses = houses.filter(h => h.side === addingToSide.side);
-    const batch = writeBatch(db);
-    const newHouseRef = doc(collection(db, "houses"));
-    batch.set(newHouseRef, {
-      blockId, territoryId, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now()
-    });
-    sideHouses.forEach(h => {
-      if (h.order >= addingToSide.orderIndex) batch.update(doc(db, "houses", h.id), { order: h.order + 1 });
-    });
-    await batch.commit();
-    setAddingToSide(null); setNewHouseNumber("");
+    if (!addingToSide || !newHouseNumber.trim() || isSavingHouse) return;
+    setIsSavingHouse(true);
+    try {
+      const sideHouses = houses.filter(h => h.side === addingToSide.side);
+      const batch = writeBatch(db);
+      const newHouseRef = doc(collection(db, "houses"));
+      batch.set(newHouseRef, {
+        blockId, territoryId, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now()
+      });
+      sideHouses.forEach(h => {
+        if (h.order >= addingToSide.orderIndex) batch.update(doc(db, "houses", h.id), { order: h.order + 1 });
+      });
+      await batch.commit();
+      setAddingToSide(null); setNewHouseNumber("");
+    } finally {
+      setIsSavingHouse(false);
+    }
   };
 
   const moveHouse = async (houseToMove: House, direction: 'left' | 'right') => {
@@ -235,7 +241,7 @@ export default function BlockPage() {
             />
             <div className="flex gap-3">
               <button type="button" onClick={() => { setAddingToSide(null); setNewHouseNumber(""); }} className="flex-1 py-4 text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 font-black uppercase text-sm">Cancelar</button>
-              <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-black uppercase text-sm">Salvar</button>
+              <button type="submit" disabled={isSavingHouse} className="flex-1 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-black uppercase text-sm disabled:opacity-50">{isSavingHouse ? "Salvando..." : "Salvar"}</button>
             </div>
           </form>
         </div>
