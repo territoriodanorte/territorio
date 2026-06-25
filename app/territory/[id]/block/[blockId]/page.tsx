@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc, where, writeBatch } from "firebase/firestore";
+import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Territory, Block, House, Side } from "@/lib/types";
 import { useEditMode } from "@/components/edit-mode-provider";
@@ -16,7 +16,7 @@ export default function BlockPage() {
   const blockId = params?.blockId as string;
   const router = useRouter();
   const { isEditMode, requestEditMode } = useEditMode();
-  
+
   const [territory, setTerritory] = useState<Territory | null>(null);
   const [block, setBlock] = useState<Block | null>(null);
   const [houses, setHouses] = useState<House[]>([]);
@@ -27,10 +27,15 @@ export default function BlockPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addingToSide, setAddingToSide] = useState<{side: Side, orderIndex: number} | null>(null);
   const [newHouseNumber, setNewHouseNumber] = useState("");
-  
+
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [editingHouseNumber, setEditingHouseNumber] = useState("");
   const [isSavingHouse, setIsSavingHouse] = useState(false);
+
+  // Caminho da sub-colecao de casas DENTRO da propria quadra.
+  // Isso evita buscar na colecao global "houses", que cresce com
+  // TODAS as casas de TODOS os territorios e ficava cada vez mais lenta.
+  const housesPath = `territories/${territoryId}/blocks/${blockId}/houses`;
 
   useEffect(() => {
     if (!territoryId || !blockId) return;
@@ -44,13 +49,23 @@ export default function BlockPage() {
         if (data.streetNames) setStreetNames(data.streetNames);
       } else router.push(`/territory/${territoryId}/blocks`);
     });
-    const unsubHouses = onSnapshot(query(collection(db, "houses"), where("blockId", "==", blockId)), (snap) => {
+    // Busca SO as casas desta quadra especifica - rapido sempre,
+    // nao importa quantas casas existam em outras quadras/territorios.
+    const unsubHouses = onSnapshot(query(collection(db, housesPath)), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as House[];
       data.sort((a, b) => (a.order || 0) - (b.order || 0));
       setHouses(data);
     });
     return () => { unsubTerritory(); unsubBlock(); unsubHouses(); };
   }, [territoryId, blockId, router]);
+
+  // Recalcula e salva os contadores visited/unvisited no documento da quadra.
+  // E o que a tela de lista de quadras le para mostrar os numeros vermelho/verde.
+  const atualizarContadores = async (listaCasas: House[]) => {
+    const visited = listaCasas.filter(h => h.status === 'visited').length;
+    const unvisited = listaCasas.length - visited;
+    await updateDoc(doc(db, `territories/${territoryId}/blocks`, blockId), { visited, unvisited });
+  };
 
   const saveStreetName = async (side: Side) => {
     if (!block) return;
@@ -67,19 +82,23 @@ export default function BlockPage() {
 
   const updateHouseStatus = async (status: 'visited' | 'not_visited' | 'not_answered') => {
     if (!selectedHouse) return;
-    await updateDoc(doc(db, "houses", selectedHouse.id), { status });
+    await updateDoc(doc(db, housesPath, selectedHouse.id), { status });
     setDialogOpen(false); setSelectedHouse(null);
+    const novaLista = houses.map(h => h.id === selectedHouse.id ? { ...h, status } : h);
+    atualizarContadores(novaLista);
   };
 
   const deleteHouse = async (houseId: string) => {
     if (!confirm("Excluir esta casa?")) return;
-    await deleteDoc(doc(db, "houses", houseId));
+    await deleteDoc(doc(db, housesPath, houseId));
+    const novaLista = houses.filter(h => h.id !== houseId);
+    atualizarContadores(novaLista);
   };
 
   const updateHouseNumber = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingHouse || !editingHouseNumber.trim()) return;
-    await updateDoc(doc(db, "houses", editingHouse.id), { number: editingHouseNumber.trim() });
+    await updateDoc(doc(db, housesPath, editingHouse.id), { number: editingHouseNumber.trim() });
     setEditingHouse(null);
     setEditingHouseNumber("");
   };
@@ -91,15 +110,17 @@ export default function BlockPage() {
     try {
       const sideHouses = houses.filter(h => h.side === addingToSide.side);
       const batch = writeBatch(db);
-      const newHouseRef = doc(collection(db, "houses"));
+      const newHouseRef = doc(collection(db, housesPath));
       batch.set(newHouseRef, {
-        blockId, territoryId, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now()
+        side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now()
       });
       sideHouses.forEach(h => {
-        if (h.order >= addingToSide.orderIndex) batch.update(doc(db, "houses", h.id), { order: h.order + 1 });
+        if (h.order >= addingToSide.orderIndex) batch.update(doc(db, housesPath, h.id), { order: h.order + 1 });
       });
       await batch.commit();
       setAddingToSide(null); setNewHouseNumber("");
+      const novaLista = [...houses, { id: newHouseRef.id, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited' as const, order: addingToSide.orderIndex }];
+      atualizarContadores(novaLista);
     } finally {
       setIsSavingHouse(false);
     }
@@ -112,14 +133,14 @@ export default function BlockPage() {
     if (direction === 'left' && currentIndex > 0) {
       const prev = sideHouses[currentIndex - 1];
       const batch = writeBatch(db);
-      batch.update(doc(db, "houses", houseToMove.id), { order: prev.order });
-      batch.update(doc(db, "houses", prev.id), { order: houseToMove.order });
+      batch.update(doc(db, housesPath, houseToMove.id), { order: prev.order });
+      batch.update(doc(db, housesPath, prev.id), { order: houseToMove.order });
       await batch.commit();
     } else if (direction === 'right' && currentIndex < sideHouses.length - 1) {
       const next = sideHouses[currentIndex + 1];
       const batch = writeBatch(db);
-      batch.update(doc(db, "houses", houseToMove.id), { order: next.order });
-      batch.update(doc(db, "houses", next.id), { order: houseToMove.order });
+      batch.update(doc(db, housesPath, houseToMove.id), { order: next.order });
+      batch.update(doc(db, housesPath, next.id), { order: houseToMove.order });
       await batch.commit();
     }
   };
@@ -127,8 +148,9 @@ export default function BlockPage() {
   const clearVisits = async () => {
     if (!confirm("Voltar todas as casas para 'Pendente'?")) return;
     const batch = writeBatch(db);
-    houses.forEach(h => batch.update(doc(db, "houses", h.id), { status: 'not_visited' }));
+    houses.forEach(h => batch.update(doc(db, housesPath, h.id), { status: 'not_visited' }));
     await batch.commit();
+    atualizarContadores(houses.map(h => ({ ...h, status: 'not_visited' as const })));
   };
 
   if (!block || !territory) return null;
@@ -161,34 +183,26 @@ export default function BlockPage() {
 
       <main className="flex-1 overflow-y-auto w-full bg-white flex flex-col items-center justify-center p-4">
         <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto my-24 z-0">
-          
-          {/* Inner dashed frame */}
+
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
 
-          {/* Center Text */}
           <div className="absolute inset-0 flex items-center justify-center -z-20">
             <span className="text-[4.5rem] font-black text-slate-100 uppercase tracking-tighter">{block.name}</span>
           </div>
 
-          {/* STREET LABELS */}
-          {/* Top */}
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
             <StreetLabel side="top" value={streetNames.top} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
           </div>
-          {/* Bottom */}
           <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
             <StreetLabel side="bottom" value={streetNames.bottom} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
           </div>
-          {/* Left */}
           <div className="absolute top-1/2 left-[-24px] -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap -translate-x-1/2">
             <StreetLabel side="left" value={streetNames.left} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
           </div>
-          {/* Right */}
           <div className="absolute top-1/2 right-[-24px] -translate-y-1/2 rotate-90 origin-center whitespace-nowrap translate-x-1/2">
             <StreetLabel side="right" value={streetNames.right} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
           </div>
 
-          {/* TOP HOUSES */}
           <div className="flex justify-center gap-1 w-full flex-wrap pb-2 border-b border-dashed border-slate-200">
             {houses.filter(h => h.side === 'top').map(h => (
               <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
@@ -196,17 +210,14 @@ export default function BlockPage() {
             {isEditMode && houses.filter(h => h.side === 'top').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
           </div>
 
-          {/* MIDDLE HOUSES */}
           <div className="flex justify-between w-full py-2 items-stretch gap-2">
-            {/* LEFT ROW */}
             <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
               {houses.filter(h => h.side === 'left').map(h => (
                 <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
               ))}
               {isEditMode && houses.filter(h => h.side === 'left').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
             </div>
-            
-            {/* RIGHT ROW */}
+
             <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
               {houses.filter(h => h.side === 'right').map(h => (
                 <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
@@ -215,18 +226,16 @@ export default function BlockPage() {
             </div>
           </div>
 
-          {/* BOTTOM HOUSES */}
           <div className="flex justify-center gap-1 w-full flex-wrap pt-2 border-t border-dashed border-slate-200">
             {houses.filter(h => h.side === 'bottom').map(h => (
               <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
             ))}
             {isEditMode && houses.filter(h => h.side === 'bottom').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
           </div>
-          
+
         </div>
       </main>
 
-      {/* Add Modal */}
       {addingToSide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <form onSubmit={addHouse} className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-xl border border-slate-200">
@@ -247,7 +256,6 @@ export default function BlockPage() {
         </div>
       )}
 
-      {/* Edit House Modal */}
       {editingHouse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <form onSubmit={updateHouseNumber} className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-xl border border-slate-200">
@@ -267,7 +275,6 @@ export default function BlockPage() {
         </div>
       )}
 
-      {/* Interaction Modal */}
       {dialogOpen && selectedHouse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl flex flex-col items-center border border-slate-200">
@@ -358,10 +365,10 @@ function StreetLabel({ side, value, editingStreet, setEditingStreet, streetNames
   if (editingStreet === side) {
     return (
       <div className="flex items-center gap-1 z-50 bg-white p-1 rounded-full shadow-lg border border-blue-200 pointer-events-auto">
-        <input 
-          autoFocus 
-          className="border-none bg-transparent w-24 px-2 text-[10px] text-slate-900 font-black uppercase outline-none focus:ring-0" 
-          value={streetNames[side] || ""} 
+        <input
+          autoFocus
+          className="border-none bg-transparent w-24 px-2 text-[10px] text-slate-900 font-black uppercase outline-none focus:ring-0"
+          value={streetNames[side] || ""}
           onChange={e => setStreetNames((s: any) => ({...s, [side]: e.target.value}))}
         />
         <button onClick={() => saveStreetName(side)} className="p-1 bg-green-500 text-white rounded-full"><Check className="w-3 h-3"/></button>
