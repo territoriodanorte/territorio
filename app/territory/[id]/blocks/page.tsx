@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
+import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Territory, Block, House } from "@/lib/types";
+import { Territory, Block } from "@/lib/types";
 import { useEditMode } from "@/components/edit-mode-provider";
 import { ArrowLeft, Map, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import Link from "next/link";
-
-type BlockStats = { visited: number; unvisited: number; };
 
 export default function BlocksPage() {
   const params = useParams();
@@ -18,7 +16,6 @@ export default function BlocksPage() {
   const { isEditMode, requestEditMode } = useEditMode();
   const [territory, setTerritory] = useState<Territory | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [houses, setHouses] = useState<House[]>([]);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -29,21 +26,32 @@ export default function BlocksPage() {
       if (docObj.exists()) setTerritory({ id: docObj.id, ...docObj.data() } as Territory);
       else router.push("/");
     });
+    // Carrega só as quadras deste territorio. Os contadores (visited/unvisited)
+    // ja vem salvos dentro de cada documento de quadra - nao buscamos mais
+    // a colecao "houses" inteira aqui, isso era o que causava a lentidao.
     const unsubBlocks = onSnapshot(query(collection(db, `territories/${id}/blocks`)), (snapshot) => {
-      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Block[];
-      data.sort((a, b) => (parseInt((a.name || "").replace(/\D/g, ""))||0) - (parseInt((b.name || "").replace(/\D/g, ""))||0));
+      const data = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        visited: d.data().visited ?? 0,
+        unvisited: d.data().unvisited ?? 0,
+      })) as Block[];
+      data.sort((a, b) => (parseInt((a.name || "").replace(/\D/g, "")) || 0) - (parseInt((b.name || "").replace(/\D/g, "")) || 0));
       setBlocks(data);
     });
-    const unsubHouses = onSnapshot(query(collection(db, "houses"), where("territoryId", "==", id)), (snap) => {
-      setHouses(snap.docs.map(d => ({ id: d.id, ...d.data() })) as House[]);
-    });
-    return () => { unsubTerritory(); unsubBlocks(); unsubHouses(); };
+    return () => { unsubTerritory(); unsubBlocks(); };
   }, [id, router]);
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
     try {
-      await addDoc(collection(db, `territories/${id}/blocks`), { name: newName.trim(), territoryId: id, createdAt: Date.now() });
+      await addDoc(collection(db, `territories/${id}/blocks`), {
+        name: newName.trim(),
+        territoryId: id,
+        createdAt: Date.now(),
+        visited: 0,
+        unvisited: 0,
+      });
       setNewName("");
     } catch (e) { console.error(e); }
   };
@@ -52,19 +60,12 @@ export default function BlocksPage() {
     if (!confirm("Excluir esta quadra e suas casas?")) return;
     await deleteDoc(doc(db, `territories/${id}/blocks`, bid));
   };
-  const startEdit = (b: Block, e:React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setEditingId(b.id); setEditName(b.name); };
-  const saveEdit = async (e:React.MouseEvent) => {
+  const startEdit = (b: Block, e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setEditingId(b.id); setEditName(b.name); };
+  const saveEdit = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     if (!editingId || !editName.trim()) return;
     await updateDoc(doc(db, `territories/${id}/blocks`, editingId), { name: editName.trim() });
     setEditingId(null);
-  };
-
-  const getStats = (bid: string): BlockStats => {
-    const bHouses = houses.filter(h => h.blockId === bid);
-    let visited = 0; let unvisited = 0;
-    bHouses.forEach(h => h.status === 'visited' ? visited++ : unvisited++);
-    return { visited, unvisited };
   };
 
   if (!territory) return null;
@@ -100,7 +101,6 @@ export default function BlocksPage() {
       <main className="flex-1 overflow-y-auto px-4 py-6 text-slate-800 bg-[#f8f9fc]">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-8">
           {blocks.map(b => {
-            const stats = getStats(b.id);
             return (
               <div key={b.id} className="relative group">
                 {editingId === b.id ? (
@@ -125,11 +125,11 @@ export default function BlocksPage() {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1.5">
                         <span className="w-3.5 h-3.5 bg-red-600 rounded-full"></span>
-                        <span className="font-semibold text-slate-500 text-xs">{stats.unvisited}</span>
+                        <span className="font-semibold text-slate-500 text-xs">{b.unvisited ?? 0}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-3.5 h-3.5 bg-green-600 rounded-full"></span>
-                        <span className="font-semibold text-slate-500 text-xs">{stats.visited}</span>
+                        <span className="font-semibold text-slate-500 text-xs">{b.visited ?? 0}</span>
                       </div>
                     </div>
                   </Link>
@@ -158,7 +158,7 @@ export default function BlocksPage() {
             </div>
           )}
         </div>
-        
+
         {blocks.length === 0 && !isEditMode && (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 pb-20">
             <p className="font-medium text-center text-sm">Nenhuma quadra adicionada ainda.<br />Ative a edição para criar.</p>
