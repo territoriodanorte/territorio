@@ -32,9 +32,6 @@ export default function BlockPage() {
   const [editingHouseNumber, setEditingHouseNumber] = useState("");
   const [isSavingHouse, setIsSavingHouse] = useState(false);
 
-  // Caminho da sub-colecao de casas DENTRO da propria quadra.
-  // Isso evita buscar na colecao global "houses", que cresce com
-  // TODAS as casas de TODOS os territorios e ficava cada vez mais lenta.
   const housesPath = `territories/${territoryId}/blocks/${blockId}/houses`;
 
   useEffect(() => {
@@ -49,8 +46,6 @@ export default function BlockPage() {
         if (data.streetNames) setStreetNames(data.streetNames);
       } else router.push(`/territory/${territoryId}/blocks`);
     });
-    // Busca SO as casas desta quadra especifica - rapido sempre,
-    // nao importa quantas casas existam em outras quadras/territorios.
     const unsubHouses = onSnapshot(query(collection(db, housesPath)), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as House[];
       data.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -59,8 +54,6 @@ export default function BlockPage() {
     return () => { unsubTerritory(); unsubBlock(); unsubHouses(); };
   }, [territoryId, blockId, router]);
 
-  // Recalcula e salva os contadores visited/unvisited no documento da quadra.
-  // E o que a tela de lista de quadras le para mostrar os numeros vermelho/verde.
   const atualizarContadores = async (listaCasas: House[]) => {
     const visited = listaCasas.filter(h => h.status === 'visited').length;
     const unvisited = listaCasas.length - visited;
@@ -181,8 +174,8 @@ export default function BlockPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto w-full bg-white flex flex-col items-center justify-center p-4">
-        <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto my-24 z-0">
+      <main className="flex-1 overflow-y-auto w-full bg-white flex flex-col items-center justify-start p-4 pt-16 pb-16">
+        <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto z-0">
 
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
 
@@ -241,13 +234,7 @@ export default function BlockPage() {
           <form onSubmit={addHouse} className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-xl border border-slate-200">
             <h2 className="text-2xl font-black mb-1 text-slate-900 uppercase">Nova Casa</h2>
             <p className="text-slate-500 mb-6 text-sm font-bold uppercase tracking-widest">{sideLabels[addingToSide.side]}</p>
-            <input
-              autoFocus
-              className="w-full border-2 border-slate-200 p-4 rounded-xl mb-6 text-slate-900 text-3xl placeholder:text-slate-300 outline-none focus:border-blue-500 text-center font-black"
-              placeholder="123"
-              value={newHouseNumber}
-              onChange={(e) => setNewHouseNumber(e.target.value)}
-            />
+            <input autoFocus className="w-full border-2 border-slate-200 p-4 rounded-xl mb-6 text-slate-900 text-3xl placeholder:text-slate-300 outline-none focus:border-blue-500 text-center font-black" placeholder="123" value={newHouseNumber} onChange={(e) => setNewHouseNumber(e.target.value)} />
             <div className="flex gap-3">
               <button type="button" onClick={() => { setAddingToSide(null); setNewHouseNumber(""); }} className="flex-1 py-4 text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 font-black uppercase text-sm">Cancelar</button>
               <button type="submit" disabled={isSavingHouse} className="flex-1 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-black uppercase text-sm disabled:opacity-50">{isSavingHouse ? "Salvando..." : "Salvar"}</button>
@@ -261,12 +248,7 @@ export default function BlockPage() {
           <form onSubmit={updateHouseNumber} className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-xl border border-slate-200">
             <h2 className="text-2xl font-black mb-1 text-slate-900 uppercase">Editar Casa</h2>
             <p className="text-slate-500 mb-6 text-sm font-bold uppercase tracking-widest">{sideLabels[editingHouse.side]}</p>
-            <input
-              autoFocus
-              className="w-full border-2 border-slate-200 p-4 rounded-xl mb-6 text-slate-900 text-3xl placeholder:text-slate-300 outline-none focus:border-blue-500 text-center font-black"
-              value={editingHouseNumber}
-              onChange={(e) => setEditingHouseNumber(e.target.value)}
-            />
+            <input autoFocus className="w-full border-2 border-slate-200 p-4 rounded-xl mb-6 text-slate-900 text-3xl placeholder:text-slate-300 outline-none focus:border-blue-500 text-center font-black" value={editingHouseNumber} onChange={(e) => setEditingHouseNumber(e.target.value)} />
             <div className="flex gap-3">
               <button type="button" onClick={() => { setEditingHouse(null); setEditingHouseNumber(""); }} className="flex-1 py-4 text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 font-black uppercase text-sm">Cancelar</button>
               <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-black uppercase text-sm">Salvar</button>
@@ -280,7 +262,6 @@ export default function BlockPage() {
           <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl flex flex-col items-center border border-slate-200">
             <h2 className="text-6xl font-black text-slate-900 leading-none mb-2">{selectedHouse.number}</h2>
             <p className="text-slate-500 mb-8 text-sm font-bold uppercase tracking-widest">{streetNames[selectedHouse.side] || "Sem Nome"}</p>
-
             {selectedHouse.status === 'not_visited' ? (
               <>
                 <p className="text-sm text-slate-800 mb-4 text-center font-black uppercase tracking-widest">Alguém atendeu?</p>
@@ -320,40 +301,22 @@ function HouseBox({ h, isEditMode, deleteHouse, addBefore, addNext, handleHouseC
   return (
     <div className={cn("flex items-center relative shrink-0", isRow ? "flex-row gap-3" : "flex-col gap-3")}>
       {isEditMode && (
-        <button
-          onClick={(e) => { e.stopPropagation(); addBefore(); }}
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0"
-        >
+        <button onClick={(e) => { e.stopPropagation(); addBefore(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0">
           <Plus className="w-3 h-3" />
         </button>
       )}
-
       <div className="relative">
-        <button
-          onClick={() => handleHouseClick(h)}
-          className={cn(
-            "min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 relative overflow-hidden",
-            h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]"
-          )}
-        >
+        <button onClick={() => handleHouseClick(h)} className={cn("min-w-[3.5rem] max-w-[4rem] px-2 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95 relative overflow-hidden", h.status === 'visited' ? "bg-green-500" : "bg-[#f14646]")}>
           <span className="truncate w-full text-center leading-none">{h.number}</span>
         </button>
-
         {isEditMode && (
-          <button
-            onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }}
-            className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow text-slate-400 hover:text-red-600 hover:bg-red-50"
-          >
+          <button onClick={(e) => { e.stopPropagation(); deleteHouse(h.id); }} className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow text-slate-400 hover:text-red-600 hover:bg-red-50">
             <Trash2 className="w-3 h-3"/>
           </button>
         )}
       </div>
-
       {isEditMode && (
-        <button
-          onClick={(e) => { e.stopPropagation(); addNext(); }}
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0"
-        >
+        <button onClick={(e) => { e.stopPropagation(); addNext(); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shrink-0">
           <Plus className="w-3 h-3" />
         </button>
       )}
@@ -365,17 +328,11 @@ function StreetLabel({ side, value, editingStreet, setEditingStreet, streetNames
   if (editingStreet === side) {
     return (
       <div className="flex items-center gap-1 z-50 bg-white p-1 rounded-full shadow-lg border border-blue-200 pointer-events-auto">
-        <input
-          autoFocus
-          className="border-none bg-transparent w-24 px-2 text-[10px] text-slate-900 font-black uppercase outline-none focus:ring-0"
-          value={streetNames[side] || ""}
-          onChange={e => setStreetNames((s: any) => ({...s, [side]: e.target.value}))}
-        />
+        <input autoFocus className="border-none bg-transparent w-24 px-2 text-[10px] text-slate-900 font-black uppercase outline-none focus:ring-0" value={streetNames[side] || ""} onChange={e => setStreetNames((s: any) => ({...s, [side]: e.target.value}))} />
         <button onClick={() => saveStreetName(side)} className="p-1 bg-green-500 text-white rounded-full"><Check className="w-3 h-3"/></button>
       </div>
     );
   }
-
   return (
     <div className="flex items-center gap-1">
       <div className="bg-slate-50 text-slate-400 px-3 py-1 text-[10px] font-bold rounded-full uppercase tracking-widest shadow-sm flex items-center justify-center pointer-events-none">
