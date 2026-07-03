@@ -174,7 +174,7 @@ export default function BlockPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto w-full bg-white flex flex-col items-center justify-start p-4 pt-16 pb-16">
+      <main className="flex-1 overflow-y-auto w-full bg-white"><div className="flex flex-col items-center w-full">
         <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto z-0">
 
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
@@ -227,7 +227,7 @@ export default function BlockPage() {
           </div>
 
         </div>
-      </main>
+      </div></main>
 
       {addingToSide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
