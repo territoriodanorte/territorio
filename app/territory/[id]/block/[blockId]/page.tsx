@@ -151,8 +151,8 @@ export default function BlockPage() {
   const sideLabels: Record<Side, string> = { top: "TOPO", right: "DIREITA", bottom: "BAIXO", left: "ESQUERDA" };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
-      <header className="bg-white p-4 flex justify-between items-center shrink-0 border-b border-slate-100">
+    <div className="flex flex-col min-h-screen bg-white">
+      <header className="bg-white p-4 flex justify-between items-center border-b border-slate-100 sticky top-0 z-10">
         <div className="flex gap-4 items-center">
            <Link href={`/territory/${territoryId}/blocks`} className="bg-slate-100 p-3 rounded-2xl text-slate-700 hover:bg-slate-200 flex items-center justify-center">
             <ArrowLeft className="w-5 h-5" />
@@ -174,7 +174,7 @@ export default function BlockPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto w-full bg-white"><div className="w-full flex flex-col items-center py-16">
+      <main className="w-full bg-white"><div className="w-full flex flex-col items-center py-16">
         <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto z-0">
 
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
