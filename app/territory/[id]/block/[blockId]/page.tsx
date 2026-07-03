@@ -174,7 +174,7 @@ export default function BlockPage() {
         </div>
       </header>
 
-      <main className="w-full bg-white"><div className="w-full flex flex-col items-center py-16">
+      <main className="w-full bg-white"><div className="w-full flex flex-col items-center pt-4 pb-16">
         <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto z-0">
 
           <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
