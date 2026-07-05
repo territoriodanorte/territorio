@@ -112,7 +112,7 @@ export default function BlockPage() {
       });
       await batch.commit();
       setAddingToSide(null); setNewHouseNumber("");
-      atualizarContadores([...houses, { id: newHouseRef.id } as House]);
+      atualizarContadores([...houses, { id: newHouseRef.id, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now() } as House]);
     } finally {
       setIsSavingHouse(false);
     }
@@ -173,60 +173,60 @@ export default function BlockPage() {
         </div>
       </header>
 
-      <main className="w-full bg-white"><div className="w-full flex flex-col items-center pt-4 pb-16">
-        <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] mx-auto z-0">
+      <main className="w-full bg-white">
+        <div className="w-full flex flex-col items-center pt-4 pb-16">
+          <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] z-0">
 
-          <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
-
-          <div className="absolute inset-0 flex items-center justify-center -z-20">
-            <span className="text-[4.5rem] font-black text-slate-100 uppercase tracking-tighter">{block.name}</span>
-          </div>
-
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
-            <StreetLabel side="top" value={streetNames.top} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
-          </div>
-          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
-            <StreetLabel side="bottom" value={streetNames.bottom} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
-          </div>
-          <div className="absolute top-1/2 left-[-24px] -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap -translate-x-1/2">
-            <StreetLabel side="left" value={streetNames.left} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
-          </div>
-          <div className="absolute top-1/2 right-[-24px] -translate-y-1/2 rotate-90 origin-center whitespace-nowrap translate-x-1/2">
-            <StreetLabel side="right" value={streetNames.right} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
-          </div>
-
-          <div className="flex justify-center gap-1 w-full flex-wrap pb-2 border-b border-dashed border-slate-200">
-            {houses.filter(h => h.side === 'top').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
-            ))}
-            {isEditMode && houses.filter(h => h.side === 'top').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
-          </div>
-
-          <div className="flex justify-between w-full py-2 items-stretch gap-2">
-            <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
-              {houses.filter(h => h.side === 'left').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
-              ))}
-              {isEditMode && houses.filter(h => h.side === 'left').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
+            <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
+            <div className="absolute inset-0 flex items-center justify-center -z-20">
+              <span className="text-[4.5rem] font-black text-slate-100 uppercase tracking-tighter">{block.name}</span>
             </div>
 
-            <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
-              {houses.filter(h => h.side === 'right').map(h => (
-                <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
-              ))}
-              {isEditMode && houses.filter(h => h.side === 'right').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <StreetLabel side="top" value={streetNames.top} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
             </div>
-          </div>
+            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <StreetLabel side="bottom" value={streetNames.bottom} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
+            </div>
+            <div className="absolute top-1/2 left-[-24px] -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap -translate-x-1/2">
+              <StreetLabel side="left" value={streetNames.left} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
+            </div>
+            <div className="absolute top-1/2 right-[-24px] -translate-y-1/2 rotate-90 origin-center whitespace-nowrap translate-x-1/2">
+              <StreetLabel side="right" value={streetNames.right} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
+            </div>
 
-          <div className="flex justify-center gap-1 w-full flex-wrap pt-2 border-t border-dashed border-slate-200">
-            {houses.filter(h => h.side === 'bottom').map(h => (
-              <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
-            ))}
-            {isEditMode && houses.filter(h => h.side === 'bottom').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
-          </div>
+            <div className="flex justify-center gap-1 w-full flex-wrap pb-2 border-b border-dashed border-slate-200">
+              {houses.filter(h => h.side === 'top').map(h => (
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
+              ))}
+              {isEditMode && houses.filter(h => h.side === 'top').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
+            </div>
 
+            <div className="flex justify-between w-full py-2 items-stretch gap-2">
+              <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
+                {houses.filter(h => h.side === 'left').map(h => (
+                  <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
+                ))}
+                {isEditMode && houses.filter(h => h.side === 'left').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
+              </div>
+              <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
+                {houses.filter(h => h.side === 'right').map(h => (
+                  <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
+                ))}
+                {isEditMode && houses.filter(h => h.side === 'right').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
+              </div>
+            </div>
+
+            <div className="flex justify-center gap-1 w-full flex-wrap pt-2 border-t border-dashed border-slate-200">
+              {houses.filter(h => h.side === 'bottom').map(h => (
+                <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
+              ))}
+              {isEditMode && houses.filter(h => h.side === 'bottom').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
+            </div>
+
+          </div>
         </div>
-      </div></main>
+      </main>
 
       {addingToSide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
