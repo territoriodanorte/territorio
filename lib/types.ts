@@ -16,16 +16,18 @@ export interface Block {
     right: string;
   };
   createdAt: number;
+  visited?: number;
+  unvisited?: number;
 }
 
 export type Side = 'top' | 'bottom' | 'left' | 'right';
 
 export interface House {
   id: string;
-  blockId: string;
-  territoryId: string;
+  blockId?: string;
+  territoryId?: string;
   side: Side;
-  streetName: string;
+  streetName?: string;
   number: string;
   status: 'not_visited' | 'visited' | 'not_answered';
   order: number;
