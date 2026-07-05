@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Territory, Block, House, Side } from "@/lib/types";
 import { useEditMode } from "@/components/edit-mode-provider";
@@ -32,7 +32,7 @@ export default function BlockPage() {
   const [editingHouseNumber, setEditingHouseNumber] = useState("");
   const [isSavingHouse, setIsSavingHouse] = useState(false);
 
-  const housesPath = `territories/${territoryId}/blocks/${blockId}/houses`;
+  const housesPath = `houses`;
 
   useEffect(() => {
     if (!territoryId || !blockId) return;
@@ -46,7 +46,7 @@ export default function BlockPage() {
         if (data.streetNames) setStreetNames(data.streetNames);
       } else router.push(`/territory/${territoryId}/blocks`);
     });
-    const unsubHouses = onSnapshot(query(collection(db, housesPath)), (snap) => {
+    const unsubHouses = onSnapshot(query(collection(db, housesPath), where('blockId', '==', blockId)), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as House[];
       data.sort((a, b) => (a.order || 0) - (b.order || 0));
       setHouses(data);
