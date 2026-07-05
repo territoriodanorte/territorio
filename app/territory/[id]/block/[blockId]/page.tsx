@@ -112,8 +112,7 @@ export default function BlockPage() {
       });
       await batch.commit();
       setAddingToSide(null); setNewHouseNumber("");
-      const novaLista: House[] = [...houses, { id: newHouseRef.id, blockId, territoryId, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited' as const, order: addingToSide.orderIndex, createdAt: Date.now(), streetName: '' }];
-      atualizarContadores(novaLista);
+      atualizarContadores([...houses, { id: newHouseRef.id } as House]);
     } finally {
       setIsSavingHouse(false);
     }
