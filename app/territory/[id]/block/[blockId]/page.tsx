@@ -50,6 +50,10 @@ export default function BlockPage() {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as House[];
       data.sort((a, b) => (a.order || 0) - (b.order || 0));
       setHouses(data);
+      // Recalcula sempre os contadores da quadra a partir das casas reais.
+      // Isso garante que, mesmo que a quadra nunca tenha sido "tocada" (visita/edicao),
+      // o numero de casas atendidas/nao atendidas fique correto assim que a pagina abre.
+      atualizarContadores(data);
     });
     return () => { unsubTerritory(); unsubBlock(); unsubHouses(); };
   }, [territoryId, blockId, router]);
@@ -174,7 +178,7 @@ export default function BlockPage() {
       </header>
 
       <main className="w-full bg-white">
-        <div className="w-full flex flex-col items-center pt-4 pb-16">
+        <div className="w-full flex flex-col items-center pt-16 pb-16">
           <div className="relative border border-slate-200 rounded-[2rem] w-[280px] bg-[#f8fafc] flex flex-col p-2 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05),0_10px_20px_-2px_rgba(0,0,0,0.02)] z-0">
 
             <div className="absolute top-[48px] bottom-[48px] left-[64px] right-[64px] border-[1.5px] border-dashed border-slate-200 rounded-2xl -z-10 bg-[#f8f9fc]/50 opacity-50" />
@@ -182,7 +186,7 @@ export default function BlockPage() {
               <span className="text-[4.5rem] font-black text-slate-100 uppercase tracking-tighter">{block.name}</span>
             </div>
 
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap z-20">
               <StreetLabel side="top" value={streetNames.top} editingStreet={editingStreet} setEditingStreet={setEditingStreet} streetNames={streetNames} setStreetNames={setStreetNames} saveStreetName={saveStreetName} isEditMode={isEditMode} />
             </div>
             <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
