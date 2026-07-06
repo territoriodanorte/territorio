@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, onSnapshot, query, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, updateDoc, getCountFromServer } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Territory, Block } from "@/lib/types";
 import { useEditMode } from "@/components/edit-mode-provider";
@@ -19,6 +19,9 @@ export default function BlocksPage() {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  // Guarda quais quadras ja tiveram o contador conferido nesta sessao,
+  // pra nao ficar reconferindo/reescrevendo em loop.
+  const checkedBlocksRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!id) return;
@@ -26,9 +29,8 @@ export default function BlocksPage() {
       if (docObj.exists()) setTerritory({ id: docObj.id, ...docObj.data() } as Territory);
       else router.push("/");
     });
-    // Carrega só as quadras deste territorio. Os contadores (visited/unvisited)
-    // ja vem salvos dentro de cada documento de quadra - nao buscamos mais
-    // a colecao "houses" inteira aqui, isso era o que causava a lentidao.
+    // Os contadores (visited/unvisited) ja vem salvos dentro de cada documento
+    // de quadra, entao a lista carrega rapido, sem baixar as casas todas.
     const unsubBlocks = onSnapshot(query(collection(db, `territories/${id}/blocks`)), (snapshot) => {
       const data = snapshot.docs.map(d => ({
         id: d.id,
@@ -38,6 +40,27 @@ export default function BlocksPage() {
       })) as Block[];
       data.sort((a, b) => (parseInt((a.name || "").replace(/\D/g, "")) || 0) - (parseInt((b.name || "").replace(/\D/g, "")) || 0));
       setBlocks(data);
+
+      // Assim que o territorio abre, confere (uma vez por quadra, nesta sessao)
+      // se o numero salvo bate com a quantidade real de casas, usando uma
+      // contagem leve do Firestore (nao baixa as casas, so conta) - por isso
+      // nao deixa o app lento. So escreve de volta se o numero estiver errado.
+      data.forEach((b) => {
+        if (checkedBlocksRef.current.has(b.id)) return;
+        checkedBlocksRef.current.add(b.id);
+        (async () => {
+          try {
+            const totalSnap = await getCountFromServer(query(collection(db, "houses"), where("blockId", "==", b.id)));
+            const visitedSnap = await getCountFromServer(query(collection(db, "houses"), where("blockId", "==", b.id), where("status", "==", "visited")));
+            const total = totalSnap.data().count;
+            const visited = visitedSnap.data().count;
+            const unvisited = total - visited;
+            if (visited !== (b.visited ?? 0) || unvisited !== (b.unvisited ?? 0)) {
+              await updateDoc(doc(db, `territories/${id}/blocks`, b.id), { visited, unvisited });
+            }
+          } catch (e) { console.error("Erro ao conferir contagem da quadra", b.id, e); }
+        })();
+      });
     });
     return () => { unsubTerritory(); unsubBlocks(); };
   }, [id, router]);
