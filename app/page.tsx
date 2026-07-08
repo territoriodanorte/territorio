@@ -10,6 +10,7 @@ import { Map, LayoutGrid, Plus, Trash2, Edit2, Check, X, MapPin } from "lucide-r
 
 export default function TerritoriesPage() {
   const [territories, setTerritories] = useState<Territory[]>([]);
+  const [loading, setLoading] = useState(true);
   const { isEditMode, requestEditMode } = useEditMode();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function TerritoriesPage() {
       });
       
       setTerritories(data);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -172,7 +174,14 @@ export default function TerritoriesPage() {
           )}
         </div>
 
-        {territories.length === 0 && !isEditMode && (
+        {territories.length === 0 && !isEditMode && loading && (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+            <p className="text-sm font-bold">Carregando...</p>
+          </div>
+        )}
+
+        {territories.length === 0 && !isEditMode && !loading && (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 pb-20">
             <LayoutGrid className="w-12 h-12 mb-4 opacity-30" />
             <p className="text-lg font-bold">Nenhum território</p>
