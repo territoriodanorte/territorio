@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -31,6 +31,12 @@ export default function BlockPage() {
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [editingHouseNumber, setEditingHouseNumber] = useState("");
   const [isSavingHouse, setIsSavingHouse] = useState(false);
+
+  // Controle do "Desfazer" ao excluir uma casa: a casa some da tela na hora,
+  // mas so e apagada de verdade do banco depois de alguns segundos.
+  const [pendingDeleteHouseIds, setPendingDeleteHouseIds] = useState<Set<string>>(new Set());
+  const [undoHouse, setUndoHouse] = useState<{ id: string; number: string } | null>(null);
+  const deleteTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const housesPath = `houses`;
 
@@ -85,11 +91,25 @@ export default function BlockPage() {
     atualizarContadores(novaLista);
   };
 
-  const deleteHouse = async (houseId: string) => {
-    if (!confirm("Excluir esta casa?")) return;
-    await deleteDoc(doc(db, housesPath, houseId));
-    const novaLista = houses.filter(h => h.id !== houseId);
-    atualizarContadores(novaLista);
+  const deleteHouse = (houseId: string) => {
+    const house = houses.find(h => h.id === houseId);
+    setPendingDeleteHouseIds(prev => new Set(prev).add(houseId));
+    setUndoHouse({ id: houseId, number: house?.number || "" });
+    const timer = setTimeout(async () => {
+      await deleteDoc(doc(db, housesPath, houseId));
+      setPendingDeleteHouseIds(prev => { const s = new Set(prev); s.delete(houseId); return s; });
+      delete deleteTimers.current[houseId];
+      setUndoHouse(curr => (curr && curr.id === houseId ? null : curr));
+    }, 5000);
+    deleteTimers.current[houseId] = timer;
+  };
+
+  const undoDeleteHouse = () => {
+    if (!undoHouse) return;
+    const timer = deleteTimers.current[undoHouse.id];
+    if (timer) { clearTimeout(timer); delete deleteTimers.current[undoHouse.id]; }
+    setPendingDeleteHouseIds(prev => { const s = new Set(prev); s.delete(undoHouse.id); return s; });
+    setUndoHouse(null);
   };
 
   const updateHouseNumber = async (e: React.FormEvent) => {
@@ -149,7 +169,16 @@ export default function BlockPage() {
     atualizarContadores(houses.map(h => ({ ...h, status: 'not_visited' as const })));
   };
 
-  if (!block || !territory) return null;
+  if (!block || !territory) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 bg-white">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-sm font-bold">Carregando...</p>
+      </div>
+    );
+  }
+
+  const visibleHouses = houses.filter(h => !pendingDeleteHouseIds.has(h.id));
 
   const sideLabels: Record<Side, string> = { top: "TOPO", right: "DIREITA", bottom: "BAIXO", left: "ESQUERDA" };
 
@@ -200,32 +229,32 @@ export default function BlockPage() {
             </div>
 
             <div className="flex justify-center gap-1 w-full flex-wrap pb-2 border-b border-dashed border-slate-200">
-              {houses.filter(h => h.side === 'top').map(h => (
+              {visibleHouses.filter(h => h.side === 'top').map(h => (
                 <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'top', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'top', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
               ))}
-              {isEditMode && houses.filter(h => h.side === 'top').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
+              {isEditMode && visibleHouses.filter(h => h.side === 'top').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'top', orderIndex: 0})} />}
             </div>
 
             <div className="flex justify-between w-full py-2 items-stretch gap-2">
               <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
-                {houses.filter(h => h.side === 'left').map(h => (
+                {visibleHouses.filter(h => h.side === 'left').map(h => (
                   <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'left', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'left', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
                 ))}
-                {isEditMode && houses.filter(h => h.side === 'left').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
+                {isEditMode && visibleHouses.filter(h => h.side === 'left').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'left', orderIndex: 0})} />}
               </div>
               <div className="flex flex-col items-center justify-evenly gap-1 relative flex-1 min-w-[58px]">
-                {houses.filter(h => h.side === 'right').map(h => (
+                {visibleHouses.filter(h => h.side === 'right').map(h => (
                   <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={false} addBefore={() => setAddingToSide({side: 'right', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'right', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
                 ))}
-                {isEditMode && houses.filter(h => h.side === 'right').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
+                {isEditMode && visibleHouses.filter(h => h.side === 'right').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'right', orderIndex: 0})} />}
               </div>
             </div>
 
             <div className="flex justify-center gap-1 w-full flex-wrap pt-2 border-t border-dashed border-slate-200">
-              {houses.filter(h => h.side === 'bottom').map(h => (
+              {visibleHouses.filter(h => h.side === 'bottom').map(h => (
                 <HouseBox key={h.id} h={h} isEditMode={isEditMode} deleteHouse={deleteHouse} isRow={true} addBefore={() => setAddingToSide({side: 'bottom', orderIndex: h.order})} addNext={() => setAddingToSide({side: 'bottom', orderIndex: h.order+1})} handleHouseClick={handleHouseClick} />
               ))}
-              {isEditMode && houses.filter(h => h.side === 'bottom').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
+              {isEditMode && visibleHouses.filter(h => h.side === 'bottom').length === 0 && <AddHouseBtn onClick={() => setAddingToSide({side: 'bottom', orderIndex: 0})} />}
             </div>
 
           </div>
@@ -286,6 +315,13 @@ export default function BlockPage() {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {undoHouse && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white pl-5 pr-3 py-3 rounded-2xl shadow-2xl flex items-center gap-4">
+          <span className="text-sm font-bold">Casa {undoHouse.number} excluída</span>
+          <button onClick={undoDeleteHouse} className="text-blue-300 font-black uppercase text-xs tracking-widest hover:text-blue-200 px-3 py-2 rounded-xl hover:bg-white/10">Desfazer</button>
         </div>
       )}
     </div>
