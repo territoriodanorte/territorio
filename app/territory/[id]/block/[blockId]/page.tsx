@@ -9,6 +9,7 @@ import { useEditMode } from "@/components/edit-mode-provider";
 import { ArrowLeft, Edit2, Check, X, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getCachedHouses, setCachedHouses } from "@/lib/houses-cache";
 
 export default function BlockPage() {
   const params = useParams();
@@ -19,7 +20,7 @@ export default function BlockPage() {
 
   const [territory, setTerritory] = useState<Territory | null>(null);
   const [block, setBlock] = useState<Block | null>(null);
-  const [houses, setHouses] = useState<House[]>([]);
+  const [houses, setHouses] = useState<House[]>(() => getCachedHouses(blockId) || []);
   const [streetNames, setStreetNames] = useState<Record<Side, string>>({ top: "", right: "", bottom: "", left: "" });
   const [editingStreet, setEditingStreet] = useState<Side | null>(null);
 
@@ -56,6 +57,7 @@ export default function BlockPage() {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as House[];
       data.sort((a, b) => (a.order || 0) - (b.order || 0));
       setHouses(data);
+      setCachedHouses(blockId, data);
       // Recalcula sempre os contadores da quadra a partir das casas reais.
       // Isso garante que, mesmo que a quadra nunca tenha sido "tocada" (visita/edicao),
       // o numero de casas atendidas/nao atendidas fique correto assim que a pagina abre.
@@ -129,6 +131,7 @@ export default function BlockPage() {
       const batch = writeBatch(db);
       const newHouseRef = doc(collection(db, housesPath));
       batch.set(newHouseRef, {
+        blockId, territoryId,
         side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now()
       });
       sideHouses.forEach(h => {
