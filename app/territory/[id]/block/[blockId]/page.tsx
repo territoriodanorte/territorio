@@ -87,10 +87,11 @@ export default function BlockPage() {
 
   const updateHouseStatus = async (status: 'visited' | 'not_visited' | 'not_answered') => {
     if (!selectedHouse) return;
-    await updateDoc(doc(db, housesPath, selectedHouse.id), { status });
     setDialogOpen(false); setSelectedHouse(null);
     const novaLista = houses.map(h => h.id === selectedHouse.id ? { ...h, status } : h);
+    setHouses(novaLista);
     atualizarContadores(novaLista);
+    await updateDoc(doc(db, housesPath, selectedHouse.id), { status });
   };
 
   const deleteHouse = (houseId: string) => {
@@ -130,6 +131,10 @@ export default function BlockPage() {
       const sideHouses = houses.filter(h => h.side === addingToSide.side);
       const batch = writeBatch(db);
       const newHouseRef = doc(collection(db, housesPath));
+      const newHouse = {
+        id: newHouseRef.id, blockId, territoryId,
+        side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited' as const, order: addingToSide.orderIndex, createdAt: Date.now(),
+      } as House;
       batch.set(newHouseRef, {
         blockId, territoryId,
         side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now()
@@ -137,9 +142,16 @@ export default function BlockPage() {
       sideHouses.forEach(h => {
         if (h.order >= addingToSide.orderIndex) batch.update(doc(db, housesPath, h.id), { order: h.order + 1 });
       });
-      await batch.commit();
+      // Atualiza a tela na hora (desloca as casas seguintes e insere a nova),
+      // sem esperar a confirmacao do banco - por isso a casa ja aparece de imediato.
+      const novaLista = houses
+        .map(h => (h.side === addingToSide.side && h.order >= addingToSide.orderIndex) ? { ...h, order: h.order + 1 } : h)
+        .concat(newHouse)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      setHouses(novaLista);
+      atualizarContadores(novaLista);
       setAddingToSide(null); setNewHouseNumber("");
-      atualizarContadores([...houses, { id: newHouseRef.id, side: addingToSide.side, number: newHouseNumber.trim(), status: 'not_visited', order: addingToSide.orderIndex, createdAt: Date.now() } as House]);
+      await batch.commit();
     } finally {
       setIsSavingHouse(false);
     }
