@@ -23,6 +23,12 @@ export default function BlocksPage() {
   // pra nao ficar reconferindo/reescrevendo em loop.
   const checkedBlocksRef = useRef<Set<string>>(new Set());
 
+  // Controle do "Desfazer" ao excluir uma quadra: ela some da tela na hora,
+  // mas so e apagada de verdade do banco depois de alguns segundos.
+  const [pendingDeleteBlockIds, setPendingDeleteBlockIds] = useState<Set<string>>(new Set());
+  const [undoBlock, setUndoBlock] = useState<{ id: string; name: string } | null>(null);
+  const blockDeleteTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
   useEffect(() => {
     if (!id) return;
     const unsubTerritory = onSnapshot(doc(db, "territories", id), (docObj) => {
@@ -78,10 +84,25 @@ export default function BlocksPage() {
       setNewName("");
     } catch (e) { console.error(e); }
   };
-  const handleDelete = async (bid: string, e: React.MouseEvent) => {
+  const handleDelete = (bid: string, e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    if (!confirm("Excluir esta quadra e suas casas?")) return;
-    await deleteDoc(doc(db, `territories/${id}/blocks`, bid));
+    const b = blocks.find(x => x.id === bid);
+    setPendingDeleteBlockIds(prev => new Set(prev).add(bid));
+    setUndoBlock({ id: bid, name: b?.name || "" });
+    const timer = setTimeout(async () => {
+      await deleteDoc(doc(db, `territories/${id}/blocks`, bid));
+      setPendingDeleteBlockIds(prev => { const s = new Set(prev); s.delete(bid); return s; });
+      delete blockDeleteTimers.current[bid];
+      setUndoBlock(curr => (curr && curr.id === bid ? null : curr));
+    }, 5000);
+    blockDeleteTimers.current[bid] = timer;
+  };
+  const undoDeleteBlock = () => {
+    if (!undoBlock) return;
+    const timer = blockDeleteTimers.current[undoBlock.id];
+    if (timer) { clearTimeout(timer); delete blockDeleteTimers.current[undoBlock.id]; }
+    setPendingDeleteBlockIds(prev => { const s = new Set(prev); s.delete(undoBlock.id); return s; });
+    setUndoBlock(null);
   };
   const startEdit = (b: Block, e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setEditingId(b.id); setEditName(b.name); };
   const saveEdit = async (e: React.MouseEvent) => {
@@ -91,7 +112,14 @@ export default function BlocksPage() {
     setEditingId(null);
   };
 
-  if (!territory) return null;
+  if (!territory) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400 bg-slate-50">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-sm font-bold">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -123,7 +151,7 @@ export default function BlocksPage() {
 
       <main className="flex-1 overflow-y-auto px-4 py-6 text-slate-800 bg-[#f8f9fc]">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-8">
-          {blocks.map(b => {
+          {blocks.filter(b => !pendingDeleteBlockIds.has(b.id)).map(b => {
             return (
               <div key={b.id} className="relative group">
                 {editingId === b.id ? (
@@ -188,6 +216,13 @@ export default function BlocksPage() {
           </div>
         )}
       </main>
+
+      {undoBlock && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white pl-5 pr-3 py-3 rounded-2xl shadow-2xl flex items-center gap-4">
+          <span className="text-sm font-bold">Quadra {undoBlock.name} excluída</span>
+          <button onClick={undoDeleteBlock} className="text-blue-300 font-black uppercase text-xs tracking-widest hover:text-blue-200 px-3 py-2 rounded-xl hover:bg-white/10">Desfazer</button>
+        </div>
+      )}
     </div>
   );
 }
