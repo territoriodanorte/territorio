@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, updateDoc, getCountFromServer } from "firebase/firestore";
+import { collection, onSnapshot, query, where, addDoc, deleteDoc, doc, updateDoc, getCountFromServer, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Territory, Block } from "@/lib/types";
+import { Territory, Block, House } from "@/lib/types";
 import { useEditMode } from "@/components/edit-mode-provider";
 import { ArrowLeft, Map, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import Link from "next/link";
+import { setCachedHouses } from "@/lib/houses-cache";
 
 export default function BlocksPage() {
   const params = useParams();
@@ -28,6 +29,8 @@ export default function BlocksPage() {
   const [pendingDeleteBlockIds, setPendingDeleteBlockIds] = useState<Set<string>>(new Set());
   const [undoBlock, setUndoBlock] = useState<{ id: string; name: string } | null>(null);
   const blockDeleteTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Garante que o pre-carregamento das casas so rode uma vez por visita ao territorio.
+  const prefetchedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -70,6 +73,32 @@ export default function BlocksPage() {
     });
     return () => { unsubTerritory(); unsubBlocks(); };
   }, [id, router]);
+
+  // Assim que a lista de quadras chega, comeca (em segundo plano, sem travar
+  // a tela) a buscar as casas de todas as quadras do territorio e guarda numa
+  // memoria temporaria. Assim, quando voce clicar numa quadra, as casas ja
+  // aparecem na hora, sem esperar o segundinho de busca.
+  useEffect(() => {
+    if (blocks.length === 0 || prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    const ids = blocks.map(b => b.id);
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+    (async () => {
+      for (const chunk of chunks) {
+        try {
+          const snap = await getDocs(query(collection(db, "houses"), where("blockId", "in", chunk)));
+          const byBlock: Record<string, House[]> = {};
+          snap.docs.forEach(d => {
+            const h = { id: d.id, ...d.data() } as House;
+            if (!h.blockId) return;
+            (byBlock[h.blockId] ||= []).push(h);
+          });
+          chunk.forEach(bid => setCachedHouses(bid, (byBlock[bid] || []).sort((a, b) => (a.order || 0) - (b.order || 0))));
+        } catch (e) { console.error("Erro ao pre-carregar casas", e); }
+      }
+    })();
+  }, [blocks]);
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
